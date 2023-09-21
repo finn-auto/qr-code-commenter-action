@@ -62,8 +62,10 @@ function run() {
             if (context.payload.pull_request == null) {
                 throw new Error('No pull request found.');
             }
-            // Comment in PR
-            yield octokit.rest.issues.createComment(Object.assign(Object.assign({}, context.repo), { issue_number: context.payload.pull_request.number, body: commentBody }));
+            const { data: pullRequest } = yield octokit.rest.pulls.get(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number }));
+            const body = `${pullRequest.body}\n\n${commentBody}`;
+            // Update PR description
+            yield octokit.rest.pulls.update(Object.assign(Object.assign({}, context.repo), { pull_number: context.payload.pull_request.number, body }));
             console.log('QR Codes commented in PR successfully');
         }
         catch (error) {

@@ -21,18 +21,26 @@ export async function run() {
       const link = linksInput[i].trim()
       const message = messagesInput[i].trim()
 
-      commentBody += `${message}\n\n![QR Code](https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=${encodeURIComponent(link)})\n\n`;
+      commentBody += `${message}\n\n![QR Code](https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=${encodeURIComponent(
+        link
+      )})\n\n`
     }
     if (context.payload.pull_request == null) {
       throw new Error('No pull request found.')
     }
 
-
-    // Comment in PR
-    await octokit.rest.issues.createComment({
+    const {data: pullRequest} = await octokit.rest.pulls.get({
       ...context.repo,
-      issue_number: context.payload.pull_request.number,
-      body: commentBody
+      pull_number: context.payload.pull_request.number
+    })
+
+    const body = `${pullRequest.body}\n\n${commentBody}`
+
+    // Update PR description
+    await octokit.rest.pulls.update({
+      ...context.repo,
+      pull_number: context.payload.pull_request.number,
+      body
     })
 
     console.log('QR Codes commented in PR successfully')
